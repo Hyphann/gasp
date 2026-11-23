@@ -990,10 +990,4 @@
   /* ==================== Initialize ==================== */
   syncSettingsUI();
   renderHomeStats();
-
-  try {
-    if (!localStorage.getItem(STORAGE_KEYS.SAFETY_SEEN)) {
-      openSafetyModal();
-    }
-  } catch (_) {}
 })();
