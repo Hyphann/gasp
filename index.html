@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Hyphan Breath — Wim Hof Style Breathing</title>
+  <meta name="description" content="Guided Wim Hof style breathing app crafted for iPad with visual pacing, retention timer, Web Audio cues, and session history." />
+
+  <!-- iPadOS / iOS Standalone PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hyphan Breath" />
+  <meta name="theme-color" content="#050b14" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient Background Aurora -->
+  <div class="aurora-bg" aria-hidden="true">
+    <div class="aurora-blob blob-1"></div>
+    <div class="aurora-blob blob-2"></div>
+    <div class="aurora-blob blob-3"></div>
+  </div>
+
+  <div id="app" class="app-shell">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-name">Hyphan Breath</span>
+      </div>
+
+      <nav class="nav-pills" role="tablist" aria-label="App views">
+        <button class="nav-pill active" data-view="home" role="tab" aria-selected="true">Breathe</button>
+        <button class="nav-pill" data-view="history" role="tab" aria-selected="false">History</button>
+      </nav>
+
+      <div class="top-actions">
+        <button id="nightModeBtn" class="icon-btn" aria-label="Toggle night mode" title="Dim / Night Mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <button id="soundToggleBtn" class="icon-btn" aria-label="Toggle sound" title="Toggle sound">
+          <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg id="soundOffIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+        <button id="safetyInfoBtn" class="icon-btn" aria-label="Safety & Guide" title="Safety & Guide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN VIEW: HOME / SETUP -->
+    <main id="view-home" class="view active">
+      <div class="home-grid">
+        <!-- Hero & Start Column -->
+        <section class="hero-card glass-card">
+          <div class="hero-orb-preview" aria-hidden="true">
+            <div class="preview-ring ring-outer"></div>
+            <div class="preview-ring ring-mid"></div>
+            <div class="preview-core"></div>
+          </div>
+
+          <h1 class="hero-title">Controlled Breathing &amp; Retention</h1>
+          <p class="hero-subtitle">
+            Power breaths, passive exhale retention, and an untimed deep recovery inhale into a full 15-second hold.
+          </p>
+
+          <div id="heroRecipePill" class="recipe-pill">3 rounds · 30 breaths · 3.2s pace</div>
+
+          <button id="startSessionBtn" class="btn-primary btn-large">
+            <span>Begin Session</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+          </button>
+
+          <div class="quick-stats">
+            <div class="stat-pill">
+              <span class="stat-label">Best Hold</span>
+              <span id="homeBestHold" class="stat-value">—</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Sessions</span>
+              <span id="homeSessionCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Total Rounds</span>
+              <span id="homeTotalRounds" class="stat-value">0</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Column -->
+        <section class="settings-card glass-card">
+          <div class="settings-section-label">Protocol</div>
+
+          <!-- Rounds -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <label for="roundsSlider">Rounds</label>
+              <span id="roundsValue" class="setting-badge">3 rounds</span>
+            </div>
+            <div class="stepper-row">
+              <button class="stepper-btn" data-target="rounds" data-delta="-1" aria-label="Decrease rounds">−</button>
+              <input id="roundsSlider" type="range" min="1" max="10" value="3" />
+              <button class="stepper-btn" data-target="rounds" data-delta="1" aria-label="Increase rounds">+</button>
+            </div>
+          </div>
+
+          <!-- Breaths per Round -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <label for="breathsSlider">Breaths per Round</label>
+              <span id="breathsValue" class="setting-badge">30 breaths</span>
+            </div>
+            <div class="preset-chips" data-preset="breaths">
+              <button class="chip" data-value="20">20</button>
+              <button class="chip active" data-value="30">30</button>
+              <button class="chip" data-value="40">40</button>
+              <button class="chip" data-value="50">50</button>
+            </div>
+            <div class="stepper-row">
+              <button class="stepper-btn" data-target="breaths" data-delta="-5" aria-label="Decrease breaths">−</button>
+              <input id="breathsSlider" type="range" min="15" max="60" step="1" value="30" />
+              <button class="stepper-btn" data-target="breaths" data-delta="5" aria-label="Increase breaths">+</button>
+            </div>
+          </div>
+
+          <!-- Breathing Pace -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <label for="paceSlider">Breathing Pace</label>
+              <span id="paceDesc" class="setting-badge">3.2s / breath</span>
+            </div>
+            <div class="pace-slider-row">
+              <span class="pace-end-label">Slower</span>
+              <input id="paceSlider" type="range" min="1.8" max="5.0" step="0.1" value="3.6" />
+              <span class="pace-end-label">Faster</span>
+            </div>
+          </div>
+
+          <!-- Recovery Hold Duration -->
+          <div class="setting-group">
+            <div class="setting-header">
+              <label for="recoverySlider">Recovery Hold</label>
+              <span id="recoveryValue" class="setting-badge">15 sec</span>
+            </div>
+            <div class="stepper-row">
+              <button class="stepper-btn" data-target="recovery" data-delta="-5" aria-label="Decrease recovery hold">−</button>
+              <input id="recoverySlider" type="range" min="10" max="30" step="1" value="15" />
+              <button class="stepper-btn" data-target="recovery" data-delta="5" aria-label="Increase recovery hold">+</button>
+            </div>
+          </div>
+
+          <!-- Audio & Eyes-Closed Mix -->
+          <div class="settings-divider"></div>
+          <div class="settings-section-row">
+            <span class="settings-section-label">Audio &amp; Eyes-Closed</span>
+            <button id="testSoundBtn" class="btn-micro" type="button">Test Audio</button>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-header">
+              <label for="volumeSlider">Master Volume</label>
+              <span id="volumeValue" class="setting-badge">85%</span>
+            </div>
+            <div class="pace-slider-row">
+              <span class="pace-end-label">Soft</span>
+              <input id="volumeSlider" type="range" min="10" max="100" step="5" value="85" />
+              <span class="pace-end-label">Full</span>
+            </div>
+          </div>
+
+          <div class="setting-group toggles-group">
+            <label class="toggle-row">
+              <div>
+                <span class="toggle-title">Breath Whoosh Cues</span>
+                <span class="toggle-sub">Inhale/exhale audio &amp; last-3-breath chime</span>
+              </div>
+              <input type="checkbox" id="breathAudioToggle" checked />
+              <span class="switch"></span>
+            </label>
+
+            <label class="toggle-row">
+              <div>
+                <span class="toggle-title">Voice Prompts (Eyes-Closed)</span>
+                <span class="toggle-sub">Spoken cues for last breath, holds &amp; minutes</span>
+              </div>
+              <input type="checkbox" id="voiceToggle" />
+              <span class="switch"></span>
+            </label>
+
+            <label class="toggle-row">
+              <div>
+                <span class="toggle-title">Ambient Retention Drone</span>
+                <span class="toggle-sub">Soft harmonic pad during exhale holds</span>
+              </div>
+              <input type="checkbox" id="droneToggle" checked />
+              <span class="switch"></span>
+            </label>
+
+            <label class="toggle-row">
+              <div>
+                <span class="toggle-title">30-Second Milestone Chimes</span>
+                <span class="toggle-sub">Gentle gong every 30s while holding</span>
+              </div>
+              <input type="checkbox" id="milestoneToggle" checked />
+              <span class="switch"></span>
+            </label>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- MAIN VIEW: ACTIVE SESSION -->
+    <main id="view-session" class="view">
+      <div class="session-container">
+        <!-- Session Status Header -->
+        <div class="session-meta">
+          <span id="sessionRoundBadge" class="phase-pill">Round 1 of 3</span>
+          <span id="sessionPhaseBadge" class="phase-pill subtle">Power Breathing</span>
+        </div>
+
+        <!-- Round Progress Dots -->
+        <div id="roundDots" class="round-dots" aria-label="Round progress"></div>
+
+        <!-- Central Interactive Breathing / Retention Stage -->
+        <div id="sessionStage" class="session-stage">
+          <!-- Radial Progress SVG -->
+          <svg class="stage-ring-svg" viewBox="0 0 360 360" aria-hidden="true">
+            <circle class="ring-track" cx="180" cy="180" r="160"></circle>
+            <circle id="stageProgressRing" class="ring-progress" cx="180" cy="180" r="160"></circle>
+          </svg>
+
+          <!-- Animated Multi-Layer Breathing Orb -->
+          <div id="breathingOrb" class="breathing-orb">
+            <div class="orb-ripple"></div>
+            <div class="orb-halo"></div>
+            <div class="orb-inner"></div>
+          </div>
+
+          <!-- Center Readout -->
+          <div class="stage-readout">
+            <div id="stagePrompt" class="stage-prompt">Get Ready</div>
+            <div id="stagePrimary" class="stage-primary">3</div>
+            <div id="stageSecondary" class="stage-secondary">Sit or lie down comfortably</div>
+          </div>
+        </div>
+
+        <!-- Prominent Action Button during Retention / Recovery Inhale -->
+        <button id="retentionEndBtn" class="retention-tap-area hidden">
+          <span class="retention-tap-title">Breathe In</span>
+        </button>
+
+        <!-- Live Breathing Pace Slider (shown during Power Breathing) -->
+        <div id="sessionPaceWrap" class="session-pace-wrap hidden">
+          <div class="session-pace-header">
+            <label for="sessionPaceSlider" class="session-pace-label">Pace</label>
+            <span id="sessionPaceValue" class="setting-badge">3.2s / breath</span>
+          </div>
+          <div class="pace-slider-row">
+            <span class="pace-end-label">Slower</span>
+            <input id="sessionPaceSlider" type="range" min="1.8" max="5.0" step="0.1" value="3.6" />
+            <span class="pace-end-label">Faster</span>
+          </div>
+        </div>
+
+        <!-- Session Controls -->
+        <div class="session-controls">
+          <button id="pauseResumeBtn" class="btn-secondary">Pause</button>
+          <button id="skipPhaseBtn" class="btn-secondary">Skip to Hold</button>
+          <button id="endSessionBtn" class="btn-danger-ghost">End</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- MAIN VIEW: SESSION SUMMARY -->
+    <main id="view-summary" class="view">
+      <div class="summary-card glass-card">
+        <div class="summary-header">
+          <span id="summaryPrBadge" class="pr-badge hidden">New Personal Best</span>
+          <h1 class="summary-title">Session Complete</h1>
+          <p id="summarySubtitle" class="summary-subtitle">3 rounds · 30 breaths · 08:42 total</p>
+        </div>
+
+        <div class="summary-metrics">
+          <div class="metric-box">
+            <span class="metric-label">Best Hold</span>
+            <span id="summaryBestHold" class="metric-value">0:00</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-label">Average Hold</span>
+            <span id="summaryAvgHold" class="metric-value">0:00</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-label">Total Hold Time</span>
+            <span id="summaryTotalHold" class="metric-value">0:00</span>
+          </div>
+        </div>
+
+        <div class="summary-rounds">
+          <h2 class="section-title">Retention by Round</h2>
+          <div id="summaryRoundBars" class="round-bars"></div>
+        </div>
+
+        <div class="summary-actions">
+          <button id="newSessionBtn" class="btn-primary">New Session</button>
+          <button id="viewHistoryBtn" class="btn-secondary">View History</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- MAIN VIEW: HISTORY -->
+    <main id="view-history" class="view">
+      <div class="history-layout">
+        <section class="glass-card history-overview">
+          <div class="history-header-row">
+            <div>
+              <h1 class="section-title large">Breathing History</h1>
+              <p class="history-sub">Stored locally on your iPad</p>
+            </div>
+            <button id="clearHistoryBtn" class="btn-danger-ghost hidden">Clear All</button>
+          </div>
+
+          <div id="historyChartWrap" class="history-chart-wrap hidden">
+            <div class="chart-label">Best Retention Trend (recent sessions)</div>
+            <div id="historyChart" class="history-chart"></div>
+          </div>
+
+          <div id="historyList" class="history-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Safety & How-To Modal -->
+  <div id="safetyModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="safetyModalTitle">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h2 id="safetyModalTitle">Safety &amp; How It Works</h2>
+        <button id="closeSafetyBtn" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="safety-callout">
+          <strong>Important Safety Notice:</strong>
+          Always practice sitting or lying down in a safe environment. <strong>Never</strong> practice in or near water (bath, pool, ocean), while driving, or standing up. Lightheadedness and tingling in hands or feet are normal. Stop immediately if you feel unwell.
+        </div>
+
+        <h3>The 3 Phases of Each Round</h3>
+        <ol class="guide-list">
+          <li><strong>Power Breathing (30–40 breaths):</strong> Inhale deeply through the nose or mouth, filling your belly and chest, then simply <em>let go</em> without forcing the exhale.</li>
+          <li><strong>Retention (Exhale Hold):</strong> After the final natural exhale, hold your breath until you feel the urge to breathe, then tap <strong>Breathe In</strong>.</li>
+          <li><strong>Recovery Inhale &amp; Hold:</strong> Take a deep, full breath in at your own pace, then tap <strong>Start 15s Hold</strong> once your lungs are full.</li>
+        </ol>
+
+        <h3>Install on iPad Home Screen</h3>
+        <p class="guide-note">
+          In Safari on your iPad, tap the <strong>Share</strong> icon in the toolbar and choose <strong>Add to Home Screen</strong>. Hyphan Breath will launch full-screen and work completely offline. (Make sure iPad Silent Mode is off if you don't hear audio.)
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button id="ackSafetyBtn" class="btn-primary">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-App Clear History Confirmation Modal -->
+  <div id="confirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="modal-card modal-compact glass-card">
+      <div class="modal-header">
+        <h2 id="confirmModalTitle">Clear Breathing History?</h2>
+      </div>
+      <div class="modal-body">
+        <p class="guide-note">This permanently removes all saved sessions and personal best stats from this iPad.</p>
+      </div>
+      <div class="modal-footer modal-footer-split">
+        <button id="cancelConfirmBtn" class="btn-secondary">Cancel</button>
+        <button id="confirmClearBtn" class="btn-danger-solid">Clear All</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
